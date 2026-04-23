@@ -113,7 +113,7 @@
           <p class="text-xs text-primary font-bold mt-1">¥{{ product.price }}</p>
           <button 
             class="mt-1 px-2 py-1 bg-primary text-white text-xs rounded w-full"
-            @click.stop="cartStore.addToCart(product, 1)"
+            @click.stop="handleAddToCart(product)"
           >
             加入购物车
           </button>
@@ -133,10 +133,12 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
+import { useUserStore } from '../stores/user'
 import { products } from '../data/books'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const userStore = useUserStore()
 
 const showToast = ref(false)
 const toastMessage = ref('')
@@ -171,6 +173,10 @@ const handleDelete = (id) => {
 }
 
 const handleCheckout = () => {
+  if (!userStore.isLoggedIn) {
+    showToastMessage('请先登录后再下单')
+    return
+  }
   if (cartStore.selectedCount > 0) {
     router.push('/checkout')
   }
@@ -178,6 +184,15 @@ const handleCheckout = () => {
 
 const goShopping = () => {
   router.push('/')
+}
+
+const handleAddToCart = (product) => {
+  if (!userStore.isLoggedIn) {
+    showToastMessage('请先登录后再加入购物车')
+    return
+  }
+  cartStore.addToCart(product, 1)
+  showToastMessage('已加入购物车')
 }
 
 const showToastMessage = (message) => {

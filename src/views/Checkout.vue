@@ -237,6 +237,10 @@ const goBack = () => {
 }
 
 const handleSubmitOrder = () => {
+  if (!userStore.isLoggedIn) {
+    showToastMessage('请先登录后再下单')
+    return
+  }
   if (!selectedAddress.value) {
     showToastMessage('请选择收货地址')
     return

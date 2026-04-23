@@ -477,12 +477,14 @@ import { getProductById, categories, getRecommendProducts } from '../data/books'
 import { useCartStore } from '../stores/cart'
 import { useFavoritesStore } from '../stores/favorites'
 import { useReviewsStore } from '../stores/reviews'
+import { useUserStore } from '../stores/user'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
 const favoritesStore = useFavoritesStore()
 const reviewsStore = useReviewsStore()
+const userStore = useUserStore()
 
 const book = ref(null)
 const showDescription = ref(true)
@@ -583,6 +585,10 @@ const increaseQuantity = () => {
 }
 
 const toggleFavorite = () => {
+  if (!userStore.isLoggedIn) {
+    showToastMessage('请先登录后再收藏')
+    return
+  }
   if (book.value) {
     const wasFavorite = favoritesStore.isFavorite(book.value.id)
     favoritesStore.toggleFavorite(book.value)
@@ -603,6 +609,10 @@ const showToastMessage = (message) => {
 }
 
 const handleAddToCart = () => {
+  if (!userStore.isLoggedIn) {
+    showToastMessage('请先登录后再加入购物车')
+    return
+  }
   if (book.value) {
     cartStore.addToCart(book.value, quantity.value)
     showToastMessage('已加入购物车')
@@ -610,6 +620,10 @@ const handleAddToCart = () => {
 }
 
 const handleBuyNow = () => {
+  if (!userStore.isLoggedIn) {
+    showToastMessage('请先登录后再下单')
+    return
+  }
   if (book.value) {
     cartStore.addToCart(book.value, quantity.value)
     router.push('/checkout')
@@ -617,6 +631,10 @@ const handleBuyNow = () => {
 }
 
 const submitReview = () => {
+  if (!userStore.isLoggedIn) {
+    showToastMessage('请先登录后再评价')
+    return
+  }
   if (!book.value || !newReview.value.content.trim()) {
     showToastMessage('请输入评价内容')
     return
