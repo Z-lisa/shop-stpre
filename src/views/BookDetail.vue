@@ -104,16 +104,6 @@
         </transition>
       </div>
 
-      <div class="px-4 py-3 border-t flex gap-6">
-        <div class="flex-1 text-center" @click="showSize = true">
-          <span class="text-sm text-primary">� 尺码</span>
-        </div>
-        <div class="w-px bg-gray-200"></div>
-        <div class="flex-1 text-center" @click="showColor = true">
-          <span class="text-sm text-gray-700">🎨 颜色</span>
-        </div>
-      </div>
-
       <div v-if="book.authorIntro" class="px-4 py-3 border-t">
         <div class="flex items-center justify-between" @click="toggleAuthorIntro">
           <span class="text-sm font-medium text-gray-700">品牌介绍</span>
@@ -156,6 +146,60 @@
             <span class="text-yellow-500">{{ book.rating }}分</span>
           </div>
         </div>
+      </div>
+
+      <!-- 尺码参考表 - 仅服装和鞋子显示 -->
+      <div v-if="book.sizeType !== 'none' && book.sizeChart" class="px-4 py-3 border-t">
+        <span class="text-sm font-medium text-gray-700">尺码参考表</span>
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full text-sm border rounded-lg overflow-hidden">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="py-3 px-3 text-center text-gray-600 font-medium">尺码</th>
+                <!-- 服装尺码表头 -->
+                <template v-if="book.sizeType === 'clothing'">
+                  <th v-if="book.sizeChart[0]?.chest || book.sizeChart[0]?.bust" class="py-3 px-3 text-center text-gray-600 font-medium">{{ book.sizeChart[0]?.chest ? '胸围' : '胸围' }}</th>
+                  <th v-if="book.sizeChart[0]?.waist" class="py-3 px-3 text-center text-gray-600 font-medium">腰围</th>
+                  <th v-if="book.sizeChart[0]?.hip" class="py-3 px-3 text-center text-gray-600 font-medium">臀围</th>
+                  <th v-if="book.sizeChart[0]?.length" class="py-3 px-3 text-center text-gray-600 font-medium">衣长</th>
+                  <th v-if="book.sizeChart[0]?.sleeve" class="py-3 px-3 text-center text-gray-600 font-medium">袖长</th>
+                  <th v-if="book.sizeChart[0]?.weight" class="py-3 px-3 text-center text-gray-600 font-medium">建议体重</th>
+                </template>
+                <!-- 鞋子尺码表头 -->
+                <template v-if="book.sizeType === 'shoes'">
+                  <th class="py-3 px-3 text-center text-gray-600 font-medium">脚长</th>
+                  <th class="py-3 px-3 text-center text-gray-600 font-medium">脚宽</th>
+                  <th class="py-3 px-3 text-center text-gray-600 font-medium">欧码</th>
+                  <th class="py-3 px-3 text-center text-gray-600 font-medium">美码</th>
+                </template>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in book.sizeChart" :key="index" :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'" class="border-t">
+                <td class="py-3 px-3 text-center font-medium text-gray-700">{{ item.size }}</td>
+                <!-- 服装尺码数据 -->
+                <template v-if="book.sizeType === 'clothing'">
+                  <td v-if="item.chest || item.bust" class="py-3 px-3 text-center text-gray-600">{{ item.chest || item.bust }}</td>
+                  <td v-if="item.waist" class="py-3 px-3 text-center text-gray-600">{{ item.waist }}</td>
+                  <td v-if="item.hip" class="py-3 px-3 text-center text-gray-600">{{ item.hip }}</td>
+                  <td v-if="item.length" class="py-3 px-3 text-center text-gray-600">{{ item.length }}</td>
+                  <td v-if="item.sleeve" class="py-3 px-3 text-center text-gray-600">{{ item.sleeve }}</td>
+                  <td v-if="item.weight" class="py-3 px-3 text-center text-gray-600">{{ item.weight }}</td>
+                </template>
+                <!-- 鞋子尺码数据 -->
+                <template v-if="book.sizeType === 'shoes'">
+                  <td class="py-3 px-3 text-center text-gray-600">{{ item.footLength }}</td>
+                  <td class="py-3 px-3 text-center text-gray-600">{{ item.footWidth }}</td>
+                  <td class="py-3 px-3 text-center text-gray-600">{{ item.eu }}</td>
+                  <td class="py-3 px-3 text-center text-gray-600">{{ item.us }}</td>
+                </template>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-gray-500 mt-3">
+          💡 温馨提示：数据为手工测量，可能存在2-3cm误差，建议根据个人特点选择合适的尺码
+        </p>
       </div>
 
       <div class="px-4 py-3 border-t">
@@ -271,105 +315,6 @@
       <button class="flex-1 h-11 rounded-lg bg-primary text-white font-medium" @click="handleBuyNow">
         立即购买
       </button>
-    </div>
-
-    <div v-if="showSize" class="fixed inset-0 bg-black/50 z-100 flex items-end" @click.self="showSize = false">
-      <div class="bg-white w-full rounded-t-2xl max-h-[70vh] overflow-hidden">
-        <div class="flex items-center justify-between px-4 py-3 border-b">
-          <span class="text-lg font-bold">尺码选择</span>
-          <button @click="showSize = false">
-            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div class="p-4 overflow-y-auto max-h-[60vh]">
-          <div class="text-sm text-gray-600 mb-4">请选择合适的尺码，测量数据仅供参考</div>
-          <div class="grid grid-cols-4 gap-3">
-            <button 
-              v-for="size in ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']" 
-              :key="size"
-              class="py-3 border rounded-lg text-sm transition-all"
-              :class="selectedSize === size ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 text-gray-700 hover:border-gray-300'"
-              @click="selectedSize = size"
-            >
-              {{ size }}
-            </button>
-          </div>
-          <div class="mt-6">
-            <div class="text-sm font-medium text-gray-700 mb-3">尺码参考表</div>
-            <table class="w-full text-sm border">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="py-2 px-3 text-left text-gray-600">尺码</th>
-                  <th class="py-2 px-3 text-left text-gray-600">胸围</th>
-                  <th class="py-2 px-3 text-left text-gray-600">衣长</th>
-                  <th class="py-2 px-3 text-left text-gray-600">袖长</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="border-t">
-                  <td class="py-2 px-3">S</td>
-                  <td class="py-2 px-3">90cm</td>
-                  <td class="py-2 px-3">65cm</td>
-                  <td class="py-2 px-3">57cm</td>
-                </tr>
-                <tr class="border-t">
-                  <td class="py-2 px-3">M</td>
-                  <td class="py-2 px-3">95cm</td>
-                  <td class="py-2 px-3">67cm</td>
-                  <td class="py-2 px-3">58cm</td>
-                </tr>
-                <tr class="border-t">
-                  <td class="py-2 px-3">L</td>
-                  <td class="py-2 px-3">100cm</td>
-                  <td class="py-2 px-3">69cm</td>
-                  <td class="py-2 px-3">59cm</td>
-                </tr>
-                <tr class="border-t">
-                  <td class="py-2 px-3">XL</td>
-                  <td class="py-2 px-3">105cm</td>
-                  <td class="py-2 px-3">71cm</td>
-                  <td class="py-2 px-3">60cm</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <button class="w-full mt-6 py-3 bg-primary text-white rounded-lg" @click="showSize = false">
-            确定
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showColor" class="fixed inset-0 bg-black/50 z-100 flex items-end" @click.self="showColor = false">
-      <div class="bg-white w-full rounded-t-2xl max-h-[70vh] overflow-hidden">
-        <div class="flex items-center justify-between px-4 py-3 border-b">
-          <span class="text-lg font-bold">颜色选择</span>
-          <button @click="showColor = false">
-            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div class="p-4 overflow-y-auto max-h-[60vh]">
-          <div class="grid grid-cols-3 gap-4">
-            <button 
-              v-for="color in colorOptions" 
-              :key="color.name"
-              class="flex flex-col items-center p-3 border rounded-lg transition-all"
-              :class="selectedColor === color.name ? 'border-primary bg-primary/10' : 'border-gray-200 hover:border-gray-300'"
-              @click="selectedColor = color.name"
-            >
-              <div class="w-12 h-12 rounded-full border mb-2" :style="{ backgroundColor: color.hex }"></div>
-              <span class="text-sm text-gray-700">{{ color.name }}</span>
-            </button>
-          </div>
-          <button class="w-full mt-6 py-3 bg-primary text-white rounded-lg" @click="showColor = false">
-            确定
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- 全部评价弹窗 -->
@@ -489,27 +434,12 @@ const userStore = useUserStore()
 const book = ref(null)
 const showDescription = ref(true)
 const showAuthorIntro = ref(false)
-const showSize = ref(false)
-const showColor = ref(false)
 const showAllReviews = ref(false)
 const showAddReview = ref(false)
 const quantity = ref(1)
 const showToast = ref(false)
 const toastMessage = ref('')
 const currentSlide = ref(0)
-const selectedSize = ref('')
-const selectedColor = ref('')
-const colorOptions = ref([
-  { name: '白色', hex: '#FFFFFF' },
-  { name: '黑色', hex: '#1A1A1A' },
-  { name: '灰色', hex: '#9CA3AF' },
-  { name: '藏青色', hex: '#1E3A5F' },
-  { name: '红色', hex: '#DC2626' },
-  { name: '蓝色', hex: '#3B82F6' },
-  { name: '绿色', hex: '#22C55E' },
-  { name: '粉色', hex: '#EC4899' },
-  { name: '米色', hex: '#D4C4A8' }
-])
 const newReview = ref({
   rating: 5,
   content: ''
