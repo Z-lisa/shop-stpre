@@ -29,6 +29,11 @@
         <p class="text-sm text-gray-500 mt-1">登录后享受更多优惠</p>
       </div>
 
+      <!-- 错误提示 -->
+      <div v-if="errorMsg" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <p class="text-sm text-red-600 text-center">{{ errorMsg }}</p>
+      </div>
+
       <div class="space-y-5">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
@@ -38,7 +43,8 @@
               v-model="form.name"
               type="text" 
               placeholder="请输入用户名"
-              class="w-full h-12 pl-12 pr-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+              :disabled="loading"
+              class="w-full h-12 pl-12 pr-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all disabled:opacity-50"
             />
           </div>
         </div>
@@ -51,7 +57,8 @@
               v-model="form.password"
               type="password" 
               placeholder="请输入密码"
-              class="w-full h-12 pl-12 pr-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+              :disabled="loading"
+              class="w-full h-12 pl-12 pr-4 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all disabled:opacity-50"
             />
           </div>
         </div>
@@ -65,12 +72,13 @@
         </div>
 
         <button 
-          class="w-full h-12 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold mt-2 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
-          :disabled="!isFormValid"
-          :class="!isFormValid ? 'opacity-50' : ''"
+          class="w-full h-12 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white font-semibold mt-2 shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+          :disabled="!isFormValid || loading"
+          :class="(!isFormValid || loading) ? 'opacity-50' : ''"
           @click="handleLogin"
         >
-          立即登录
+          <span v-if="loading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+          <span>{{ loading ? '登录中...' : '立即登录' }}</span>
         </button>
 
         <div class="flex items-center gap-4 my-4">
@@ -111,12 +119,18 @@ const form = ref({
   password: '123456'
 })
 
+const loading = ref(false)
+const errorMsg = ref('')
+
 const isFormValid = computed(() => {
   return form.value.name && form.value.password
 })
 
 const handleLogin = async () => {
   if (!isFormValid.value) return
+  
+  loading.value = true
+  errorMsg.value = ''
   
   try {
     await userStore.login(form.value.name, form.value.password)
@@ -125,6 +139,9 @@ const handleLogin = async () => {
     router.replace(redirect)
   } catch (error) {
     console.error('登录失败:', error)
+    errorMsg.value = error.response?.data?.detail || '登录失败，请检查用户名和密码'
+  } finally {
+    loading.value = false
   }
 }
 
