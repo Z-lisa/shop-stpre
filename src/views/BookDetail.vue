@@ -251,13 +251,13 @@
           </div>
         </div>
         
-        <!-- 查看更多评价按钮 -->
+        <!-- 查看全部评价按钮 -->
         <button 
-          v-if="allReviews.length > 5"
+          v-if="allReviews.length > 3"
           class="w-full mt-4 px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm"
           @click="showAllReviews = true"
         >
-          查看更多评价 ({{ allReviews.length }})
+          查看全部评价 ({{ allReviews.length }})
         </button>
         
         <!-- 添加评价按钮 -->
@@ -478,7 +478,7 @@ const goodRatingRate = computed(() => {
 })
 
 const displayedReviews = computed(() => {
-  return allReviews.value.slice(0, 5)
+  return allReviews.value.slice(0, 3)
 })
 
 const recommendBooks = computed(() => {

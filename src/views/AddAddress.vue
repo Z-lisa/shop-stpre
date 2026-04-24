@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 pb-32">
     <div class="bg-primary px-4 py-3">
       <div class="flex items-center gap-3">
         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" @click="goBack">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
-        <h1 class="text-white text-lg font-bold">新增收货地址</h1>
+        <h1 class="text-white text-lg font-bold">{{ isEdit ? '编辑收货地址' : '新增收货地址' }}</h1>
       </div>
     </div>
 
@@ -77,7 +77,7 @@
       </div>
     </div>
 
-    <div class="fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3">
+    <div class="fixed bottom-14 left-0 right-0 bg-white border-t px-4 py-3 z-30" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));">
       <button 
         class="w-full h-11 rounded-lg bg-primary text-white font-medium"
         @click="saveAddress"
@@ -89,13 +89,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAddressStore } from '../stores/address'
 
 const router = useRouter()
 const route = useRoute()
 const addressStore = useAddressStore()
+
+const editId = ref(route.query.edit || null)
+const isEdit = computed(() => !!editId.value)
 
 const form = ref({
   name: '',
@@ -107,27 +110,50 @@ const form = ref({
   isDefault: false
 })
 
+onMounted(() => {
+  if (isEdit.value) {
+    const address = addressStore.getAddressById(editId.value)
+    if (address) {
+      form.value = { ...address }
+    }
+  }
+})
+
 const saveAddress = () => {
   if (!form.value.name || !form.value.phone || !form.value.detail) {
     alert('请填写完整信息')
     return
   }
   
-  addressStore.addAddress(form.value)
+  if (isEdit.value) {
+    addressStore.updateAddress(editId.value, form.value)
+  } else {
+    addressStore.addAddress(form.value)
+  }
   
   // 获取返回页面
   const from = route.query.from || '/address'
   
   // 如果是从选择地址页面来的，返回到选择页面
   if (from === '/select-address') {
-    const newAddress = addressStore.addresses[addressStore.addresses.length - 1]
-    router.replace({
-      path: from,
-      query: { 
-        ...route.query,
-        selected: newAddress.id 
-      }
-    })
+    if (isEdit.value) {
+      router.replace({
+        path: from,
+        query: { 
+          ...route.query,
+          selected: editId.value 
+        }
+      })
+    } else {
+      const newAddress = addressStore.addresses[addressStore.addresses.length - 1]
+      router.replace({
+        path: from,
+        query: { 
+          ...route.query,
+          selected: newAddress.id 
+        }
+      })
+    }
   } else {
     router.replace(from)
   }
