@@ -86,6 +86,11 @@ export const useOrderStore = defineStore('order', () => {
       }
       
       saveToLocalStorage()
+      
+      // 5分钟后自动发货
+      setTimeout(() => {
+        shipOrder(orderId)
+      }, 5 * 60 * 1000)
     }
   }
 

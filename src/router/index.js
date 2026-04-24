@@ -86,11 +86,6 @@ const routes = [
     path: '/about-us',
     name: 'AboutUs',
     component: () => import('../views/AboutUs.vue')
-  },
-  {
-    path: '/clear-data',
-    name: 'ClearData',
-    component: () => import('../views/ClearData.vue')
   }
 ]
 

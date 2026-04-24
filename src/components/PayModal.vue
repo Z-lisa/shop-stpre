@@ -132,15 +132,20 @@ const confirmPay = () => {
   paySuccess.value = true
   
   setTimeout(() => {
-    emit('success', {
-      orderId: props.orderId,
-      method: selectedMethod.value
-    })
+    emitSuccess()
   }, 2000)
+}
+
+const emitSuccess = () => {
+  emit('success', {
+    orderId: props.orderId,
+    method: selectedMethod.value
+  })
 }
 
 const goToOrderDetail = () => {
   showPayResult.value = false
+  emitSuccess()
   emit('close')
   router.push({ path: '/profile', query: { tab: 'orders' } })
 }

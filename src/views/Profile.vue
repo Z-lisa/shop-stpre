@@ -104,15 +104,6 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </div>
-        <div class="menu-item px-4 py-4 flex items-center justify-between" @click="router.push('/clear-data')">
-          <div class="flex items-center gap-3">
-            <span class="text-lg">🗑️</span>
-            <span class="text-sm text-gray-700">清空数据</span>
-          </div>
-          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
       </div>
     </template>
 
@@ -236,13 +227,6 @@
                 @click="openPayModal(order)"
               >
                 去支付
-              </button>
-              <button 
-                v-if="order.status === 'paid'"
-                class="px-3 py-1.5 text-xs border border-gray-300 rounded-lg text-gray-600"
-                @click="simulateShip(order.id)"
-              >
-                模拟发货
               </button>
               <button 
                 v-if="order.status === 'shipped'"
