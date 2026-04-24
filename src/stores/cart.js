@@ -35,8 +35,10 @@ export const useCartStore = defineStore('cart', () => {
            cartItems.value.every(item => selectedItems.value.includes(item.id))
   })
 
-  const addToCart = (book, quantity = 1) => {
-    const existingItem = cartItems.value.find(item => item.id === book.id)
+  const addToCart = (book, quantity = 1, size = null) => {
+    const existingItem = cartItems.value.find(item => 
+      item.id === book.id && item.size === size
+    )
     if (existingItem) {
       existingItem.quantity += quantity
     } else {
@@ -47,9 +49,10 @@ export const useCartStore = defineStore('cart', () => {
         price: book.price,
         cover: book.cover,
         quantity: quantity,
-        stock: book.stock
+        stock: book.stock,
+        size: size
       })
-      selectedItems.value.push(book.id)
+      selectedItems.value.push(book.id + (size ? `_${size}` : ''))
     }
     saveToLocalStorage()
   }

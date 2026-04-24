@@ -407,6 +407,51 @@
       </div>
     </div>
 
+    <!-- 尺码选择弹窗 -->
+    <div v-if="showSizeSelector" class="fixed inset-0 bg-black/50 z-100" @click.self="showSizeSelector = false">
+      <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl z-100">
+        <div class="px-4 py-3 border-b flex items-center justify-between">
+          <span class="text-lg font-bold">选择尺码</span>
+          <button @click="showSizeSelector = false">
+            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-4">
+          <div class="flex flex-wrap gap-3">
+            <button 
+              v-for="size in book?.sizes" 
+              :key="size"
+              class="px-6 py-3 border rounded-lg text-sm font-medium transition-all"
+              :class="selectedSize === size ? 'border-primary bg-blue-50 text-primary' : 'border-gray-200 text-gray-700'"
+              @click="selectedSize = size"
+            >
+              {{ size }}
+            </button>
+          </div>
+          
+          <div class="mt-6 flex items-center justify-between">
+            <span class="text-sm text-gray-500">数量</span>
+            <div class="flex items-center border rounded-lg">
+              <button class="w-9 h-9 flex items-center justify-center text-gray-600" @click="quantity > 1 && quantity--">-</button>
+              <span class="w-10 text-center text-gray-800">{{ quantity }}</span>
+              <button class="w-9 h-9 flex items-center justify-center text-gray-600" @click="quantity < 99 && quantity++">+</button>
+            </div>
+          </div>
+          
+          <button 
+            class="w-full h-12 mt-6 rounded-lg bg-primary text-white font-medium"
+            :disabled="!selectedSize"
+            :class="!selectedSize ? 'opacity-50' : ''"
+            @click="confirmSizeSelection"
+          >
+            确认
+          </button>
+        </div>
+      </div>
+    </div>
+
     <transition name="fade">
       <div v-if="showToast" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg text-sm z-100">
         {{ toastMessage }}
@@ -436,6 +481,9 @@ const showDescription = ref(true)
 const showAuthorIntro = ref(false)
 const showAllReviews = ref(false)
 const showAddReview = ref(false)
+const showSizeSelector = ref(false)
+const sizeSelectorAction = ref('')
+const selectedSize = ref('')
 const quantity = ref(1)
 const showToast = ref(false)
 const toastMessage = ref('')
@@ -544,8 +592,13 @@ const handleAddToCart = () => {
     return
   }
   if (book.value) {
-    cartStore.addToCart(book.value, quantity.value)
-    showToastMessage('已加入购物车')
+    if (book.value.sizes && book.value.sizes.length > 0) {
+      sizeSelectorAction.value = 'cart'
+      showSizeSelector.value = true
+    } else {
+      cartStore.addToCart(book.value, quantity.value)
+      showToastMessage('已加入购物车')
+    }
   }
 }
 
@@ -555,9 +608,32 @@ const handleBuyNow = () => {
     return
   }
   if (book.value) {
-    cartStore.addToCart(book.value, quantity.value)
+    if (book.value.sizes && book.value.sizes.length > 0) {
+      sizeSelectorAction.value = 'buy'
+      showSizeSelector.value = true
+    } else {
+      cartStore.addToCart(book.value, quantity.value)
+      router.push('/checkout')
+    }
+  }
+}
+
+const confirmSizeSelection = () => {
+  if (!selectedSize.value) {
+    showToastMessage('请选择尺码')
+    return
+  }
+  
+  if (sizeSelectorAction.value === 'cart') {
+    cartStore.addToCart(book.value, quantity.value, selectedSize.value)
+    showToastMessage('已加入购物车')
+  } else if (sizeSelectorAction.value === 'buy') {
+    cartStore.addToCart(book.value, quantity.value, selectedSize.value)
     router.push('/checkout')
   }
+  
+  showSizeSelector.value = false
+  selectedSize.value = ''
 }
 
 const submitReview = () => {

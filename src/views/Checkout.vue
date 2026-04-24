@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 pb-24">
+  <div class="min-h-screen bg-gray-50 pb-48">
     <div class="bg-primary px-4 py-3">
       <div class="flex items-center gap-3">
         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" @click="goBack">
@@ -35,6 +35,7 @@
         <div class="flex-1">
           <h3 class="text-sm font-medium text-gray-800 truncate">{{ item.name }}</h3>
           <p class="text-xs text-gray-500 mt-1">{{ item.author }}</p>
+          <p v-if="item.size" class="text-xs text-gray-400 mt-1">尺码: {{ item.size }}</p>
           <div class="flex items-center justify-between mt-2">
             <span class="text-sm text-primary font-bold">¥{{ item.price }}</span>
             <div class="flex items-center border rounded-lg">
@@ -113,7 +114,7 @@
       </div>
     </div>
 
-    <div class="fixed bottom-14 left-0 right-0 bg-white border-t px-4 py-3 z-30" style="padding-bottom: calc(3rem + env(safe-area-inset-bottom));">
+    <div class="fixed bottom-14 left-0 right-0 bg-white border-t px-4 py-3 z-30" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));">
       <button 
         class="w-full h-11 rounded-lg bg-primary text-white font-medium"
         @click="handleSubmitOrder"
@@ -139,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAddressStore } from '../stores/address'
@@ -163,6 +164,14 @@ const createdOrderId = ref('')
 const selectedAddressId = ref('')
 const selectedCouponId = ref(null)
 const orderNote = ref('')
+
+watch(() => route.query.selectedCoupon, (newVal) => {
+  if (newVal) {
+    selectedCouponId.value = newVal
+  } else {
+    selectedCouponId.value = null
+  }
+})
 
 const selectedAddress = computed(() => {
   return addressStore.addresses.find(a => a.id === selectedAddressId.value) || addressStore.defaultAddress()
@@ -202,6 +211,8 @@ const decreaseQty = (item) => {
   if (item.quantity > 1) {
     item.quantity--
     cartStore.updateQuantity(item.id, item.quantity)
+  } else {
+    cartStore.removeFromCart(item.id)
   }
 }
 

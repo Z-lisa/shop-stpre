@@ -58,6 +58,7 @@
             <div class="flex-1">
               <h4 class="text-sm font-medium text-gray-800 truncate">{{ item.name }}</h4>
               <p class="text-xs text-gray-500 mt-1">{{ item.author }}</p>
+              <p v-if="item.size" class="text-xs text-gray-400 mt-1">尺码: {{ item.size }}</p>
               <div class="flex items-center justify-between mt-2">
                 <span class="text-sm text-primary font-bold">¥{{ item.price }}</span>
                 <span class="text-xs text-gray-400">x{{ item.quantity }}</span>
