@@ -15,11 +15,11 @@
       <div class="space-y-2 text-sm">
         <div class="flex justify-between">
           <span class="text-gray-500">订单编号</span>
-          <span class="text-gray-800">{{ orderNumber }}</span>
+          <span class="text-gray-800">{{ order?.id || orderNumber }}</span>
         </div>
         <div class="flex justify-between">
           <span class="text-gray-500">订单金额</span>
-          <span class="text-primary font-bold">¥0.00</span>
+          <span class="text-primary font-bold">¥{{ (order?.totalPrice || 0).toFixed(2) }}</span>
         </div>
         <div class="flex justify-between">
           <span class="text-gray-500">支付方式</span>
@@ -27,7 +27,7 @@
         </div>
         <div class="flex justify-between">
           <span class="text-gray-500">下单时间</span>
-          <span class="text-gray-800">{{ currentTime }}</span>
+          <span class="text-gray-800">{{ order?.createTime || currentTime }}</span>
         </div>
       </div>
     </div>
@@ -50,10 +50,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useOrderStore } from '../stores/order'
 
 const router = useRouter()
+const route = useRoute()
+const orderStore = useOrderStore()
 
 const orderNumber = ref('BK' + Date.now().toString().slice(-10))
 const currentTime = ref(new Date().toLocaleString('zh-CN', { 
@@ -64,8 +67,19 @@ const currentTime = ref(new Date().toLocaleString('zh-CN', {
   minute: '2-digit'
 }))
 
+const order = computed(() => {
+  const orderId = route.query.orderId
+  if (orderId) {
+    return orderStore.getOrderById(orderId)
+  }
+  return null
+})
+
 const goToOrders = () => {
-  router.replace('/profile')
+  router.replace({
+    path: '/profile',
+    query: { tab: 'orders' }
+  })
 }
 
 const goToHome = () => {

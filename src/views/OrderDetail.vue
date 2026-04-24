@@ -245,6 +245,7 @@ const handlePaySuccess = (data) => {
   orderStore.payOrder(data.orderId, data.method)
   // 刷新订单数据
   order.value = orderStore.getOrderById(data.orderId)
+  showPayModal.value = false
 }
 
 const simulateShip = () => {

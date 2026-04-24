@@ -95,10 +95,19 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </div>
-        <div class="menu-item px-4 py-4 flex items-center justify-between">
+        <div class="menu-item px-4 py-4 flex items-center justify-between" @click="router.push('/about-us')">
           <div class="flex items-center gap-3">
             <span class="text-lg">ℹ️</span>
             <span class="text-sm text-gray-700">关于我们</span>
+          </div>
+          <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+        <div class="menu-item px-4 py-4 flex items-center justify-between" @click="router.push('/clear-data')">
+          <div class="flex items-center gap-3">
+            <span class="text-lg">🗑️</span>
+            <span class="text-sm text-gray-700">清空数据</span>
           </div>
           <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

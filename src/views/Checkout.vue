@@ -126,7 +126,7 @@
       :show="showPayModal" 
       :total-price="finalPrice"
       :order-id="createdOrderId"
-      @close="showPayModal = false"
+      @close="handlePayModalClose"
       @success="handlePaySuccess"
     />
 
@@ -250,10 +250,6 @@ const handleSubmitOrder = () => {
     return
   }
 
-  if (selectedCoupon.value) {
-    couponStore.useCoupon(selectedCoupon.value.id)
-  }
-
   createdOrderId.value = orderStore.createOrder({
     items: [...editableItems.value],
     totalPrice: totalPrice.value,
@@ -262,16 +258,42 @@ const handleSubmitOrder = () => {
     note: orderNote.value
   })
 
-  editableItems.value.forEach(item => {
-    cartStore.removeFromCart(item.id)
-  })
-
   showPayModal.value = true
 }
 
 const handlePaySuccess = (data) => {
+  // 支付成功后从购物车删除商品
+  editableItems.value.forEach(item => {
+    cartStore.removeFromCart(item.id)
+  })
+  
+  // 支付成功后使用优惠券
+  if (selectedCoupon.value) {
+    couponStore.useCoupon(selectedCoupon.value.id)
+  }
+  
   orderStore.payOrder(data.orderId, data.method)
-  router.replace('/order-success')
+  router.replace({
+    path: '/order-success',
+    query: { orderId: data.orderId }
+  })
+}
+
+const handlePayModalClose = () => {
+  showPayModal.value = false
+  // 如果支付弹窗关闭，需要删除已创建的订单（如果支付未成功）
+  if (createdOrderId.value) {
+    const order = orderStore.getOrderById(createdOrderId.value)
+    if (order && order.status === 'pending') {
+      // 删除未支付的订单
+      const index = orderStore.orders.findIndex(o => o.id === createdOrderId.value)
+      if (index > -1) {
+        orderStore.orders.splice(index, 1)
+        orderStore.saveToLocalStorage()
+      }
+    }
+  }
+  createdOrderId.value = ''
 }
 
 const showToastMessage = (message) => {

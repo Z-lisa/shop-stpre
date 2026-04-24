@@ -81,6 +81,16 @@ const routes = [
     path: '/select-coupon',
     name: 'SelectCoupon',
     component: () => import('../views/SelectCoupon.vue')
+  },
+  {
+    path: '/about-us',
+    name: 'AboutUs',
+    component: () => import('../views/AboutUs.vue')
+  },
+  {
+    path: '/clear-data',
+    name: 'ClearData',
+    component: () => import('../views/ClearData.vue')
   }
 ]
 
