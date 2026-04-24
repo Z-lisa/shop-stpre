@@ -1,81 +1,96 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { addressApi } from '@/api/address'
 
 export const useAddressStore = defineStore('address', () => {
-  const addresses = ref(JSON.parse(localStorage.getItem('addresses') || '[]'))
+  const addresses = ref([])
+  const loading = ref(false)
 
-  const saveToLocalStorage = () => {
-    localStorage.setItem('addresses', JSON.stringify(addresses.value))
-  }
-
-  const defaultAddress = () => {
-    return addresses.value.find(a => a.isDefault) || addresses.value[0] || null
-  }
-
-  const addAddress = (address) => {
-    if (addresses.value.length === 0) {
-      address.isDefault = true
-    }
-    addresses.value.push({
-      id: 'addr_' + Date.now(),
-      ...address
-    })
-    saveToLocalStorage()
-  }
-
-  const updateAddress = (id, newAddress) => {
-    const index = addresses.value.findIndex(a => a.id === id)
-    if (index > -1) {
-      addresses.value[index] = { ...addresses.value[index], ...newAddress }
-      saveToLocalStorage()
+  // 获取地址列表
+  const fetchAddresses = async () => {
+    loading.value = true
+    try {
+      const data = await addressApi.getAddresses()
+      addresses.value = data
+      return data
+    } catch (error) {
+      console.error('获取地址列表失败:', error)
+      addresses.value = []
+      return []
+    } finally {
+      loading.value = false
     }
   }
 
-  const deleteAddress = (id) => {
-    const index = addresses.value.findIndex(a => a.id === id)
-    if (index > -1) {
-      addresses.value.splice(index, 1)
-      if (addresses.value.length > 0 && !addresses.value.some(a => a.isDefault)) {
-        addresses.value[0].isDefault = true
-      }
-      saveToLocalStorage()
+  // 获取地址详情
+  const fetchAddressDetail = async (addressId) => {
+    loading.value = true
+    try {
+      const data = await addressApi.getAddressDetail(addressId)
+      return data
+    } catch (error) {
+      console.error('获取地址详情失败:', error)
+      return null
+    } finally {
+      loading.value = false
     }
   }
 
-  const setDefault = (id) => {
-    addresses.value.forEach(a => {
-      a.isDefault = a.id === id
-    })
-    saveToLocalStorage()
+  // 新增地址
+  const createAddress = async (data) => {
+    const address = await addressApi.createAddress(data)
+    await fetchAddresses()
+    return address
   }
 
-  const getAddressById = (id) => {
-    return addresses.value.find(a => a.id === id)
+  // 更新地址
+  const updateAddress = async (addressId, data) => {
+    const address = await addressApi.updateAddress(addressId, data)
+    await fetchAddresses()
+    return address
   }
 
-  if (addresses.value.length === 0) {
-    addresses.value = [
-      {
-        id: 'addr_default',
-        name: '张三',
-        phone: '138****8888',
-        province: '北京市',
-        city: '北京市',
-        district: '朝阳区',
-        detail: '建国路xx号xx小区xx号楼xx单元xx室',
-        isDefault: true
-      }
-    ]
-    saveToLocalStorage()
+  // 删除地址
+  const deleteAddress = async (addressId) => {
+    await addressApi.deleteAddress(addressId)
+    await fetchAddresses()
   }
+
+  // 设为默认地址
+  const setDefaultAddress = async (addressId) => {
+    const address = await addressApi.setDefaultAddress(addressId)
+    await fetchAddresses()
+    return address
+  }
+
+  // 获取默认地址
+  const getDefaultAddress = () => {
+    return addresses.value.find(addr => addr.is_default) || null
+  }
+
+  // 别名，用于兼容 Checkout.vue 的调用
+  const defaultAddress = getDefaultAddress
+
+  // 根据ID获取地址
+  const getAddressById = (addressId) => {
+    return addresses.value.find(addr => addr.id === parseInt(addressId)) || null
+  }
+
+  // 别名，兼容 AddAddress.vue 的调用
+  const addAddress = createAddress
 
   return {
     addresses,
-    defaultAddress,
+    loading,
+    fetchAddresses,
+    fetchAddressDetail,
+    createAddress,
     addAddress,
     updateAddress,
     deleteAddress,
-    setDefault,
+    setDefaultAddress,
+    getDefaultAddress,
+    defaultAddress,
     getAddressById
   }
 })

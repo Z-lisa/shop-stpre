@@ -75,6 +75,16 @@ const order = computed(() => {
   return null
 })
 
+// 页面加载时获取订单详情
+onMounted(() => {
+  const orderId = route.query.orderId
+  if (orderId) {
+    orderStore.fetchOrderDetail(orderId)
+    // 同时刷新订单列表
+    orderStore.fetchOrders()
+  }
+})
+
 const goToOrders = () => {
   router.replace({
     path: '/profile',

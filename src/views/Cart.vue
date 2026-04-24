@@ -36,21 +36,21 @@
             </svg>
           </div>
 
-          <img :src="item.cover" :alt="item.name" class="w-20 h-24 object-cover rounded flex-shrink-0" />
+          <img :src="item.product.cover_image" :alt="item.product.name" class="w-20 h-24 object-cover rounded flex-shrink-0" />
 
           <div class="flex-1 min-w-0">
             <div class="flex justify-between items-start">
-              <h3 class="text-sm font-medium text-gray-800 truncate flex-1">{{ item.name }}</h3>
+              <h3 class="text-sm font-medium text-gray-800 truncate flex-1">{{ item.product.name }}</h3>
               <button class="text-gray-400 ml-2 flex-shrink-0" @click="handleDelete(item.id)">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <p class="text-xs text-gray-500 mt-1 truncate">{{ item.author }}</p>
+            <p class="text-xs text-gray-500 mt-1 truncate">{{ item.product.author }}</p>
             <p v-if="item.size" class="text-xs text-gray-400 mt-1">尺码: {{ item.size }}</p>
             <div class="flex items-center justify-between mt-2">
-              <span class="text-sm text-primary font-bold">¥{{ item.price }}</span>
+              <span class="text-sm text-primary font-bold">¥{{ item.product.price }}</span>
               <div class="flex items-center border rounded-lg">
                 <button 
                   class="w-8 h-8 flex items-center justify-center text-gray-600"
@@ -131,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useUserStore } from '../stores/user'
@@ -192,7 +192,7 @@ const handleAddToCart = (product) => {
     showToastMessage('请先登录后再加入购物车')
     return
   }
-  cartStore.addToCart(product, 1)
+  cartStore.addToCart(product.id, 1)
   showToastMessage('已加入购物车')
 }
 
@@ -203,4 +203,11 @@ const showToastMessage = (message) => {
     showToast.value = false
   }, 1500)
 }
+
+// 页面加载时获取购物车数据
+onMounted(() => {
+  if (userStore.isLoggedIn) {
+    cartStore.fetchCart()
+  }
+})
 </script>

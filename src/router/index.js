@@ -96,7 +96,9 @@ const router = createRouter({
 
 // 路由守卫 - 检查登录状态
 router.beforeEach((to, from, next) => {
-  const userStore = useUserStore()
+  // 直接从 localStorage 读取 token，避免 store 未初始化问题
+  const token = localStorage.getItem('token')
+  const isLoggedIn = !!token
   
   // 如果未登录且访问需要登录的页面，跳转到登录页
   const publicPages = ['/', '/category', '/search', '/book/:id', '/login', '/customer-service', '/coupons']
@@ -108,7 +110,7 @@ router.beforeEach((to, from, next) => {
     return page === to.path
   })
   
-  if (!userStore.isLoggedIn && !isPublicPage) {
+  if (!isLoggedIn && !isPublicPage) {
     next({ path: '/login', query: { redirect: to.fullPath } })
   } else {
     next()

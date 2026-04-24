@@ -254,10 +254,17 @@ const completeOrder = () => {
   order.value = orderStore.getOrderById(order.value.id)
 }
 
-onMounted(() => {
+onMounted(async () => {
   const orderId = route.params.id
   if (orderId) {
-    order.value = orderStore.getOrderById(orderId)
+    // 从API获取订单详情（store中已进行数据转换）
+    const orderData = await orderStore.fetchOrderDetail(orderId)
+    if (orderData) {
+      order.value = orderData
+    } else {
+      // 如果API获取失败，尝试从本地store获取
+      order.value = orderStore.getOrderById(orderId)
+    }
   }
 })
 </script>

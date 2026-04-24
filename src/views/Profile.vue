@@ -39,12 +39,12 @@
           <div class="flex flex-col items-center" @click="activeTab = 'orders'">
             <span class="text-xl text-primary">📋</span>
             <span class="text-xs text-gray-600 mt-1">订单</span>
-            <span class="text-xs text-gray-400">{{ orderStore.orders.length }}</span>
+            <span class="text-xs text-gray-400">{{ orderStore.orders?.length || 0 }}</span>
           </div>
           <div class="flex flex-col items-center" @click="router.push('/coupons')">
             <span class="text-xl text-orange-500">🎫</span>
             <span class="text-xs text-gray-600 mt-1">优惠券</span>
-            <span class="text-xs text-gray-400">{{ couponStore.availableUserCoupons.length }}</span>
+            <span class="text-xs text-gray-400">{{ couponStore.myCoupons?.length || 0 }}</span>
           </div>
         </div>
       </div>
@@ -117,9 +117,9 @@
         </div>
       </div>
 
-      <div v-if="favoritesStore.favorites.length > 0" class="favorites-list px-4 py-4">
+      <div v-if="favoritesStore.favorites?.length > 0" class="favorites-list px-4 py-4">
         <div 
-          v-for="book in favoritesStore.favorites" 
+          v-for="book in favoritesStore.favorites || []" 
           :key="book.id"
           class="favorite-item bg-white rounded-lg p-3 mb-3 flex gap-3 shadow-sm"
           @click="goToDetail(book.id)"
@@ -174,9 +174,9 @@
         </div>
       </div>
 
-      <div v-if="displayOrders.length > 0" class="orders-list px-4 py-4 space-y-4">
+      <div v-if="displayOrders?.length > 0" class="orders-list px-4 py-4 space-y-4">
         <div 
-          v-for="order in displayOrders" 
+          v-for="order in displayOrders || []" 
           :key="order.id"
           class="order-card bg-white rounded-lg overflow-hidden shadow-sm"
           @click="goToOrderDetail(order.id)"
@@ -364,19 +364,37 @@ const handleLogout = () => {
   router.push('/login')
 }
 
+// 获取订单列表
+const loadOrders = async () => {
+  if (userStore.isLoggedIn) {
+    await orderStore.fetchOrders()
+  }
+}
+
 onMounted(() => {
   if (route.query.tab === 'orders') {
     activeTab.value = 'orders'
   } else if (route.query.tab === 'favorites') {
     activeTab.value = 'favorites'
   }
+  // 加载订单数据
+  loadOrders()
 })
 
 watch(() => route.query.tab, (newTab) => {
   if (newTab === 'orders') {
     activeTab.value = 'orders'
+    // 切换到订单标签时加载订单
+    loadOrders()
   } else if (newTab === 'favorites') {
     activeTab.value = 'favorites'
+  }
+})
+
+// 当切换到订单标签时加载订单
+watch(activeTab, (newTab) => {
+  if (newTab === 'orders') {
+    loadOrders()
   }
 })
 </script>

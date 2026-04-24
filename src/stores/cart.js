@@ -1,13 +1,25 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { cartApi } from '@/api/cart'
 
 export const useCartStore = defineStore('cart', () => {
-  const cartItems = ref(JSON.parse(localStorage.getItem('cart') || '[]'))
-  const selectedItems = ref(JSON.parse(localStorage.getItem('selectedItems') || '[]'))
+  const cartItems = ref([])
+  const loading = ref(false)
 
-  const saveToLocalStorage = () => {
-    localStorage.setItem('cart', JSON.stringify(cartItems.value))
-    localStorage.setItem('selectedItems', JSON.stringify(selectedItems.value))
+  // 从 API 加载购物车
+  const fetchCart = async () => {
+    loading.value = true
+    try {
+      const data = await cartApi.getCart()
+      cartItems.value = data.items || []
+      return data
+    } catch (error) {
+      console.error('获取购物车失败:', error)
+      cartItems.value = []
+      return { items: [], total_items: 0, total_price: 0 }
+    } finally {
+      loading.value = false
+    }
   }
 
   const totalItems = computed(() => {
@@ -15,108 +27,120 @@ export const useCartStore = defineStore('cart', () => {
   })
 
   const totalPrice = computed(() => {
-    return cartItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    return cartItems.value.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
   })
 
   const selectedTotal = computed(() => {
     return cartItems.value
-      .filter(item => selectedItems.value.includes(item.id))
-      .reduce((sum, item) => sum + item.price * item.quantity, 0)
+      .filter(item => item.is_selected)
+      .reduce((sum, item) => sum + item.product.price * item.quantity, 0)
   })
 
   const selectedCount = computed(() => {
     return cartItems.value
-      .filter(item => selectedItems.value.includes(item.id))
+      .filter(item => item.is_selected)
       .reduce((sum, item) => sum + item.quantity, 0)
   })
 
   const isAllSelected = computed(() => {
     return cartItems.value.length > 0 && 
-           cartItems.value.every(item => selectedItems.value.includes(item.id))
+           cartItems.value.every(item => item.is_selected)
   })
 
-  const addToCart = (book, quantity = 1, size = null) => {
-    const existingItem = cartItems.value.find(item => 
-      item.id === book.id && item.size === size
-    )
-    if (existingItem) {
-      existingItem.quantity += quantity
-    } else {
-      cartItems.value.push({
-        id: book.id,
-        name: book.name,
-        author: book.author,
-        price: book.price,
-        cover: book.cover,
-        quantity: quantity,
-        stock: book.stock,
-        size: size
-      })
-      selectedItems.value.push(book.id + (size ? `_${size}` : ''))
-    }
-    saveToLocalStorage()
+  // 选中的商品ID列表
+  const selectedItems = computed(() => {
+    return cartItems.value
+      .filter(item => item.is_selected)
+      .map(item => item.id)
+  })
+
+  // 添加到购物车
+  const addToCart = async (productId, quantity = 1, size = null) => {
+    const data = await cartApi.addToCart({
+      product_id: productId,
+      quantity,
+      size
+    })
+    await fetchCart()
+    return data
   }
 
-  const removeFromCart = (bookId) => {
-    const index = cartItems.value.findIndex(item => item.id === bookId)
-    if (index > -1) {
-      cartItems.value.splice(index, 1)
-      selectedItems.value = selectedItems.value.filter(id => id !== bookId)
-      saveToLocalStorage()
-    }
+  // 从购物车删除
+  const removeFromCart = async (itemId) => {
+    await cartApi.deleteCartItem(itemId)
+    await fetchCart()
   }
 
-  const updateQuantity = (bookId, quantity) => {
-    const item = cartItems.value.find(item => item.id === bookId)
-    if (item) {
-      item.quantity = Math.max(1, Math.min(99, quantity))
-      saveToLocalStorage()
-    }
+  // 更新数量
+  const updateQuantity = async (itemId, quantity) => {
+    await cartApi.updateCartItem(itemId, { quantity })
+    await fetchCart()
   }
 
-  const toggleSelect = (bookId) => {
-    const index = selectedItems.value.indexOf(bookId)
-    if (index > -1) {
-      selectedItems.value.splice(index, 1)
-    } else {
-      selectedItems.value.push(bookId)
-    }
-    saveToLocalStorage()
+  // 切换选中状态
+  const toggleSelect = async (itemId) => {
+    await cartApi.toggleSelect(itemId)
+    await fetchCart()
   }
 
-  const selectAll = () => {
-    if (isAllSelected.value) {
-      selectedItems.value = []
-    } else {
-      selectedItems.value = cartItems.value.map(item => item.id)
-    }
-    saveToLocalStorage()
+  // 全选/全不选
+  const selectAll = async () => {
+    const select = !isAllSelected.value
+    await cartApi.selectAll(select)
+    await fetchCart()
   }
 
-  const clearCart = () => {
+  // 清空购物车
+  const clearCart = async () => {
+    await cartApi.clearCart()
     cartItems.value = []
-    selectedItems.value = []
-    saveToLocalStorage()
   }
 
+  // 获取选中的商品
   const getSelectedItems = () => {
-    return cartItems.value.filter(item => selectedItems.value.includes(item.id))
+    return cartItems.value.filter(item => item.is_selected)
+  }
+
+  // 立即购买：添加商品并标记为选中，其他商品取消选中
+  const buyNow = async (productId, quantity = 1, size = null) => {
+    // 先取消所有商品的选中状态
+    if (cartItems.value.length > 0) {
+      await cartApi.selectAll(false)
+    }
+    // 添加商品到购物车
+    const data = await cartApi.addToCart({
+      product_id: productId,
+      quantity,
+      size
+    })
+    // 重新加载购物车获取最新数据
+    await fetchCart()
+    // 选中新添加的商品（最后一个）
+    const newItem = cartItems.value[cartItems.value.length - 1]
+    if (newItem) {
+      await cartApi.toggleSelect(newItem.id)
+      await fetchCart()
+    }
+    return data
   }
 
   return {
     cartItems,
-    selectedItems,
+    loading,
     totalItems,
     totalPrice,
     selectedTotal,
     selectedCount,
     isAllSelected,
+    selectedItems,
+    fetchCart,
     addToCart,
     removeFromCart,
     updateQuantity,
     toggleSelect,
     selectAll,
     clearCart,
-    getSelectedItems
+    getSelectedItems,
+    buyNow
   }
 })

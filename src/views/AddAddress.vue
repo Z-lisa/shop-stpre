@@ -119,43 +119,51 @@ onMounted(() => {
   }
 })
 
-const saveAddress = () => {
+const saveAddress = async () => {
   if (!form.value.name || !form.value.phone || !form.value.detail) {
     alert('请填写完整信息')
     return
   }
-  
-  if (isEdit.value) {
-    addressStore.updateAddress(editId.value, form.value)
-  } else {
-    addressStore.addAddress(form.value)
+
+  // 转换字段名：驼峰转下划线
+  const addressData = {
+    name: form.value.name,
+    phone: form.value.phone,
+    province: form.value.province,
+    city: form.value.city,
+    district: form.value.district,
+    detail: form.value.detail,
+    is_default: form.value.isDefault
   }
-  
-  // 获取返回页面
-  const from = route.query.from || '/address'
-  
-  // 如果是从选择地址页面来的，返回到选择页面
-  if (from === '/select-address') {
+
+  try {
+    let newAddressId = null
     if (isEdit.value) {
+      await addressStore.updateAddress(editId.value, addressData)
+      newAddressId = editId.value
+    } else {
+      const newAddress = await addressStore.addAddress(addressData)
+      newAddressId = newAddress?.id
+    }
+
+    // 获取返回页面
+    const from = route.query.from || '/address'
+
+    // 如果是从选择地址页面来的，返回到选择页面
+    if (from === '/select-address') {
       router.replace({
         path: from,
-        query: { 
+        query: {
           ...route.query,
-          selected: editId.value 
+          selected: newAddressId || editId.value
         }
       })
     } else {
-      const newAddress = addressStore.addresses[addressStore.addresses.length - 1]
-      router.replace({
-        path: from,
-        query: { 
-          ...route.query,
-          selected: newAddress.id 
-        }
-      })
+      router.replace(from)
     }
-  } else {
-    router.replace(from)
+  } catch (error) {
+    console.error('保存地址失败:', error)
+    alert('保存地址失败，请重试')
   }
 }
 

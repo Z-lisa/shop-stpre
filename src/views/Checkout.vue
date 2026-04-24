@@ -31,13 +31,13 @@
         :key="item.id"
         class="order-item flex items-center gap-3 py-3 border-b border-gray-100 last:border-0"
       >
-        <img :src="item.cover" :alt="item.name" class="w-16 h-20 object-cover rounded" />
+        <img :src="item.product.cover_image" :alt="item.product.name" class="w-16 h-20 object-cover rounded" />
         <div class="flex-1">
-          <h3 class="text-sm font-medium text-gray-800 truncate">{{ item.name }}</h3>
-          <p class="text-xs text-gray-500 mt-1">{{ item.author }}</p>
+          <h3 class="text-sm font-medium text-gray-800 truncate">{{ item.product.name }}</h3>
+          <p class="text-xs text-gray-500 mt-1">{{ item.product.author }}</p>
           <p v-if="item.size" class="text-xs text-gray-400 mt-1">尺码: {{ item.size }}</p>
           <div class="flex items-center justify-between mt-2">
-            <span class="text-sm text-primary font-bold">¥{{ item.price }}</span>
+            <span class="text-sm text-primary font-bold">¥{{ item.product.price }}</span>
             <div class="flex items-center border rounded-lg">
               <button 
                 class="w-8 h-8 flex items-center justify-center text-gray-600"
@@ -186,7 +186,7 @@ const editableItems = computed(() => {
 })
 
 const totalPrice = computed(() => {
-  return editableItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  return editableItems.value.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 })
 
 const vipDiscountAmount = computed(() => {
@@ -247,7 +247,7 @@ const goBack = () => {
   router.back()
 }
 
-const handleSubmitOrder = () => {
+const handleSubmitOrder = async () => {
   if (!userStore.isLoggedIn) {
     showToastMessage('请先登录后再下单')
     return
@@ -261,47 +261,64 @@ const handleSubmitOrder = () => {
     return
   }
 
-  createdOrderId.value = orderStore.createOrder({
-    items: [...editableItems.value],
-    totalPrice: totalPrice.value,
-    address: selectedAddress.value,
-    coupon: selectedCoupon.value,
-    note: orderNote.value
-  })
+  try {
+    // 构建订单数据
+    const orderData = {
+      address_id: selectedAddress.value.id,
+      items: editableItems.value.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        size: item.size
+      })),
+      coupon_id: selectedCoupon.value?.id || null,
+      note: orderNote.value
+    }
 
-  showPayModal.value = true
+    const order = await orderStore.createOrder(orderData)
+    createdOrderId.value = order.id
+    showPayModal.value = true
+  } catch (error) {
+    console.error('创建订单失败:', error)
+    showToastMessage('创建订单失败，请重试')
+  }
 }
 
-const handlePaySuccess = (data) => {
-  // 支付成功后从购物车删除商品
-  editableItems.value.forEach(item => {
-    cartStore.removeFromCart(item.id)
-  })
-  
-  // 支付成功后使用优惠券
-  if (selectedCoupon.value) {
-    couponStore.useCoupon(selectedCoupon.value.id)
+const handlePaySuccess = async (data) => {
+  try {
+    // 支付订单
+    await orderStore.payOrder(data.orderId, data.method)
+    
+    // 支付成功后从购物车删除商品
+    editableItems.value.forEach(item => {
+      cartStore.removeFromCart(item.id)
+    })
+    
+    // 支付成功后使用优惠券
+    if (selectedCoupon.value) {
+      couponStore.useCoupon(selectedCoupon.value.id)
+    }
+    
+    // 刷新订单列表
+    await orderStore.fetchOrders()
+    
+    router.replace({
+      path: '/order-success',
+      query: { orderId: data.orderId }
+    })
+  } catch (error) {
+    console.error('支付处理失败:', error)
+    showToastMessage('支付处理失败，请重试')
   }
-  
-  orderStore.payOrder(data.orderId, data.method)
-  router.replace({
-    path: '/order-success',
-    query: { orderId: data.orderId }
-  })
 }
 
 const handlePayModalClose = () => {
   showPayModal.value = false
-  // 如果支付弹窗关闭，需要删除已创建的订单（如果支付未成功）
+  // 如果支付弹窗关闭，需要取消已创建的订单（如果支付未成功）
   if (createdOrderId.value) {
     const order = orderStore.getOrderById(createdOrderId.value)
     if (order && order.status === 'pending') {
-      // 删除未支付的订单
-      const index = orderStore.orders.findIndex(o => o.id === createdOrderId.value)
-      if (index > -1) {
-        orderStore.orders.splice(index, 1)
-        orderStore.saveToLocalStorage()
-      }
+      // 取消未支付的订单
+      orderStore.cancelOrder(createdOrderId.value)
     }
   }
   createdOrderId.value = ''
@@ -315,7 +332,14 @@ const showToastMessage = (message) => {
   }, 1500)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // 初始化数据
+  if (userStore.isLoggedIn) {
+    await cartStore.fetchCart()
+    await addressStore.fetchAddresses()
+    await couponStore.fetchMyCoupons()
+  }
+
   // 从路由参数获取选中的地址
   if (route.query.selectedAddress) {
     selectedAddressId.value = route.query.selectedAddress
@@ -325,12 +349,13 @@ onMounted(() => {
       selectedAddressId.value = defaultAddr.id
     }
   }
-  
+
   // 从路由参数获取选中的优惠券
   if (route.query.selectedCoupon) {
     selectedCouponId.value = route.query.selectedCoupon
   }
-  
+
+  // 检查是否有商品，如果没有则返回购物车
   if (editableItems.value.length === 0) {
     router.replace('/cart')
   }

@@ -596,13 +596,13 @@ const handleAddToCart = () => {
       sizeSelectorAction.value = 'cart'
       showSizeSelector.value = true
     } else {
-      cartStore.addToCart(book.value, quantity.value)
+      cartStore.addToCart(book.value.id, quantity.value)
       showToastMessage('已加入购物车')
     }
   }
 }
 
-const handleBuyNow = () => {
+const handleBuyNow = async () => {
   if (!userStore.isLoggedIn) {
     showToastMessage('请先登录后再下单')
     return
@@ -612,26 +612,26 @@ const handleBuyNow = () => {
       sizeSelectorAction.value = 'buy'
       showSizeSelector.value = true
     } else {
-      cartStore.addToCart(book.value, quantity.value)
+      await cartStore.buyNow(book.value.id, quantity.value)
       router.push('/checkout')
     }
   }
 }
 
-const confirmSizeSelection = () => {
+const confirmSizeSelection = async () => {
   if (!selectedSize.value) {
     showToastMessage('请选择尺码')
     return
   }
-  
+
   if (sizeSelectorAction.value === 'cart') {
-    cartStore.addToCart(book.value, quantity.value, selectedSize.value)
+    cartStore.addToCart(book.value.id, quantity.value, selectedSize.value)
     showToastMessage('已加入购物车')
   } else if (sizeSelectorAction.value === 'buy') {
-    cartStore.addToCart(book.value, quantity.value, selectedSize.value)
+    await cartStore.buyNow(book.value.id, quantity.value, selectedSize.value)
     router.push('/checkout')
   }
-  
+
   showSizeSelector.value = false
   selectedSize.value = ''
 }

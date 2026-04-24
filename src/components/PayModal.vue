@@ -109,7 +109,10 @@ const props = defineProps({
     type: Number,
     default: 0
   },
-  orderId: String
+  orderId: {
+    type: [String, Number],
+    default: ''
+  }
 })
 
 const emit = defineEmits(['close', 'success'])

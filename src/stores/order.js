@@ -1,177 +1,123 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useUserStore } from './user'
+import { orderApi } from '@/api/order'
+
+// 转换后端订单数据为前端格式
+const transformOrderData = (data) => {
+  if (!data) return null
+  return {
+    id: data.id,
+    orderNo: data.order_no,
+    status: data.status,
+    totalPrice: data.total_amount,
+    originalPrice: data.original_amount,
+    discountAmount: data.discount_amount,
+    isVIPOrder: data.vip_discount < 1,
+    createTime: data.created_at,
+    payTime: data.pay_time,
+    shipTime: data.ship_time,
+    completeTime: data.complete_time,
+    address: data.address_snapshot,
+    note: data.note,
+    items: data.items?.map(item => ({
+      id: item.product_id,
+      name: item.product_name,
+      cover: item.product_cover,
+      size: item.size,
+      quantity: item.quantity,
+      price: item.unit_price
+    })) || []
+  }
+}
 
 export const useOrderStore = defineStore('order', () => {
-  const userStore = useUserStore()
-  
-  // 根据用户类型存储不同的订单数据
-  const getStorageKey = () => {
-    return userStore.isGuest ? 'guest_orders' : 'orders'
-  }
-  
-  const orders = ref(JSON.parse(localStorage.getItem(getStorageKey()) || '[]'))
+  const orders = ref([])
+  const currentOrder = ref(null)
+  const loading = ref(false)
 
-  const saveToLocalStorage = () => {
-    // 游客不保存订单数据
-    if (userStore.isGuest) {
-      return
-    }
-    localStorage.setItem(getStorageKey(), JSON.stringify(orders.value))
-  }
-
-  const pendingOrders = computed(() => {
-    return orders.value.filter(order => order.status === 'pending')
-  })
-
-  const paidOrders = computed(() => {
-    return orders.value.filter(order => order.status === 'paid')
-  })
-
-  const shippedOrders = computed(() => {
-    return orders.value.filter(order => order.status === 'shipped')
-  })
-
-  const completedOrders = computed(() => {
-    return orders.value.filter(order => order.status === 'completed')
-  })
-
-  const createOrder = (orderData) => {
-    // 应用VIP折扣
-    const originalPrice = orderData.totalPrice
-    const discountedPrice = userStore.isVIP ? originalPrice * userStore.vipDiscount : originalPrice
-    
-    const newOrder = {
-      id: 'BK' + Date.now().toString().slice(-10),
-      items: orderData.items,
-      totalPrice: discountedPrice,
-      originalPrice: originalPrice, // 保存原价
-      discount: userStore.isVIP ? userStore.vipDiscount : 1,
-      isVIPOrder: userStore.isVIP,
-      address: orderData.address,
-      note: orderData.note || '', // 订单备注
-      status: 'pending',
-      createTime: new Date().toLocaleString('zh-CN', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      }),
-      payTime: null,
-      shipTime: null,
-      completeTime: null
-    }
-    orders.value.unshift(newOrder)
-    saveToLocalStorage()
-    return newOrder.id
-  }
-
-  const payOrder = (orderId, payMethod) => {
-    const order = orders.value.find(o => o.id === orderId)
-    if (order) {
-      order.status = 'paid'
-      order.payMethod = payMethod
-      order.payTime = new Date().toLocaleString('zh-CN', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-      
-      // 更新用户消费金额（仅限登录用户）
-      if (!userStore.isGuest) {
-        userStore.updateSpending(order.totalPrice)
-      }
-      
-      saveToLocalStorage()
-      
-      // 5分钟后自动发货
-      setTimeout(() => {
-        shipOrder(orderId)
-      }, 5 * 60 * 1000)
-    }
-  }
-
-  const shipOrder = (orderId) => {
-    const order = orders.value.find(o => o.id === orderId)
-    if (order) {
-      order.status = 'shipped'
-      order.shipTime = new Date().toLocaleString('zh-CN', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-      saveToLocalStorage()
-    }
-  }
-
-  const completeOrder = (orderId) => {
-    const order = orders.value.find(o => o.id === orderId)
-    if (order) {
-      order.status = 'completed'
-      order.completeTime = new Date().toLocaleString('zh-CN', { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-      saveToLocalStorage()
-    }
-  }
-
-  const updateOrderAddress = (orderId, newAddress) => {
-    const order = orders.value.find(o => o.id === orderId)
-    if (order && order.status === 'pending') {
-      order.address = newAddress
-      saveToLocalStorage()
-    }
-  }
-
-  const updateOrderItems = (orderId, newItems) => {
-    const order = orders.value.find(o => o.id === orderId)
-    if (order && order.status === 'pending') {
-      order.items = newItems
-      order.totalPrice = newItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      saveToLocalStorage()
-    }
-  }
-
-  const getOrderById = (orderId) => {
-    return orders.value.find(o => o.id === orderId)
-  }
-
+  // 根据状态获取订单
   const getOrdersByStatus = (status) => {
+    if (!orders.value || !Array.isArray(orders.value)) return []
     if (status === 'all') return orders.value
-    return orders.value.filter(o => o.status === status)
+    return orders.value.filter(order => order.status === status)
   }
 
-  const deleteOrder = (orderId) => {
-    const index = orders.value.findIndex(o => o.id === orderId)
-    if (index > -1) {
-      orders.value.splice(index, 1)
-      saveToLocalStorage()
+  // 根据ID获取订单
+  const getOrderById = (orderId) => {
+    if (!orders.value || !Array.isArray(orders.value)) return null
+    return orders.value.find(order => order.id === parseInt(orderId)) || null
+  }
+
+  // 获取订单列表
+  const fetchOrders = async (params = {}) => {
+    loading.value = true
+    try {
+      const data = await orderApi.getOrders(params)
+      // 转换后端数据为前端格式
+      orders.value = Array.isArray(data) ? data.map(transformOrderData) : []
+      return orders.value
+    } catch (error) {
+      console.error('获取订单列表失败:', error)
+      orders.value = []
+      return []
+    } finally {
+      loading.value = false
     }
+  }
+
+  // 获取订单详情
+  const fetchOrderDetail = async (orderId) => {
+    loading.value = true
+    try {
+      const data = await orderApi.getOrderDetail(orderId)
+      // 转换后端数据为前端格式
+      currentOrder.value = transformOrderData(data)
+      return currentOrder.value
+    } catch (error) {
+      console.error('获取订单详情失败:', error)
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 创建订单
+  const createOrder = async (data) => {
+    const order = await orderApi.createOrder(data)
+    return order
+  }
+
+  // 支付订单
+  const payOrder = async (orderId, payMethod) => {
+    const result = await orderApi.payOrder(orderId, payMethod)
+    // 更新本地订单状态
+    await fetchOrderDetail(orderId)
+    return result
+  }
+
+  // 取消订单
+  const cancelOrder = async (orderId) => {
+    await orderApi.cancelOrder(orderId)
+    await fetchOrders()
+  }
+
+  // 确认收货
+  const confirmOrder = async (orderId) => {
+    await orderApi.confirmOrder(orderId)
+    await fetchOrderDetail(orderId)
   }
 
   return {
     orders,
-    pendingOrders,
-    paidOrders,
-    shippedOrders,
-    completedOrders,
+    currentOrder,
+    loading,
+    getOrdersByStatus,
+    getOrderById,
+    fetchOrders,
+    fetchOrderDetail,
     createOrder,
     payOrder,
-    shipOrder,
-    completeOrder,
-    updateOrderAddress,
-    updateOrderItems,
-    getOrderById,
-    getOrdersByStatus,
-    deleteOrder
+    cancelOrder,
+    confirmOrder
   }
 })

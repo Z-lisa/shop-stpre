@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "book-shop-backend"
+version = "1.0.0"
+description = "Book Shop API Backend"
+authors = ["Your Name <your.email@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.104.1"
+uvicorn = {extras = ["standard"], version = "^0.24.0"}
+sqlalchemy = "^2.0.23"
+pymysql = "^1.1.0"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.6"
+pydantic = "^2.5.2"
+pydantic-settings = "^2.1.0"
+python-dotenv = "^1.0.0"
+alembic = "^1.13.0"
+redis = "^5.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -115,15 +115,17 @@ const isFormValid = computed(() => {
   return form.value.name && form.value.password
 })
 
-const handleLogin = () => {
+const handleLogin = async () => {
   if (!isFormValid.value) return
   
-  userStore.login({
-    name: form.value.name
-  })
-  
-  const redirect = route.query.redirect || '/'
-  router.replace(redirect)
+  try {
+    await userStore.login(form.value.name, form.value.password)
+    
+    const redirect = route.query.redirect || '/'
+    router.replace(redirect)
+  } catch (error) {
+    console.error('登录失败:', error)
+  }
 }
 
 const handleGuestLogin = () => {

@@ -1,113 +1,119 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { couponApi } from '@/api/coupon'
 
 export const useCouponStore = defineStore('coupon', () => {
-  const availableCoupons = ref([
-    {
-      id: 1,
-      name: '新人专享券',
-      discount: 10,
-      minAmount: 59,
-      type: 'fixed',
-      expireDate: '2026-12-31',
-      description: '满59元可用',
-      status: 'available'
-    },
-    {
-      id: 2,
-      name: '满减优惠券',
-      discount: 20,
-      minAmount: 99,
-      type: 'fixed',
-      expireDate: '2026-06-30',
-      description: '满99元可用',
-      status: 'available'
-    },
-    {
-      id: 3,
-      name: '9折优惠券',
-      discount: 0.9,
-      minAmount: 0,
-      type: 'percentage',
-      expireDate: '2026-05-31',
-      description: '全场通用9折',
-      status: 'available'
-    },
-    {
-      id: 4,
-      name: '文学专区券',
-      discount: 15,
-      minAmount: 79,
-      type: 'fixed',
-      expireDate: '2026-04-30',
-      description: '文学类购物满79元可用',
-      status: 'available'
-    }
-  ])
+  const coupons = ref([])
+  const myCoupons = ref([])
+  const loading = ref(false)
 
-  const userCoupons = ref(JSON.parse(localStorage.getItem('userCoupons') || '[]'))
+  // 别名，兼容 Checkout.vue
+  const userCoupons = myCoupons
 
-  const saveToLocalStorage = () => {
-    localStorage.setItem('userCoupons', JSON.stringify(userCoupons.value))
-  }
+  // 可领取的优惠券（领券中心）
+  const availableCoupons = computed(() => {
+    return coupons.value.filter(c => {
+      // 过滤掉已领取的
+      const claimed = myCoupons.value.some(mc => mc.coupon_id === c.id || mc.id === c.id)
+      return !claimed
+    })
+  })
 
-  const claimCoupon = (couponId) => {
-    const coupon = availableCoupons.value.find(c => c.id === couponId)
-    if (coupon) {
-      const newCoupon = {
-        ...coupon,
-        claimTime: new Date().toLocaleString('zh-CN'),
-        used: false
-      }
-      userCoupons.value.push(newCoupon)
-      saveToLocalStorage()
-      return true
-    }
-    return false
-  }
-
-  const useCoupon = (couponId) => {
-    const coupon = userCoupons.value.find(c => c.id === couponId)
-    if (coupon && !coupon.used) {
-      coupon.used = true
-      coupon.useTime = new Date().toLocaleString('zh-CN')
-      saveToLocalStorage()
-      return true
-    }
-    return false
-  }
-
+  // 可用的优惠券（未使用）
   const availableUserCoupons = computed(() => {
-    return userCoupons.value.filter(c => !c.used && new Date(c.expireDate) > new Date())
+    return myCoupons.value.filter(c => c.status === 'unused' || !c.status)
   })
 
+  // 已使用的优惠券
   const usedUserCoupons = computed(() => {
-    return userCoupons.value.filter(c => c.used)
+    return myCoupons.value.filter(c => c.status === 'used')
   })
 
-  const expiredUserCoupons = computed(() => {
-    return userCoupons.value.filter(c => !c.used && new Date(c.expireDate) <= new Date())
-  })
-
-  const calculateDiscount = (coupon, totalPrice) => {
+  // 计算折扣金额
+  const calculateDiscount = (coupon, price) => {
     if (!coupon) return 0
-    if (totalPrice < coupon.minAmount) return 0
-    
-    if (coupon.type === 'fixed') {
-      return Math.min(coupon.discount, totalPrice)
-    } else if (coupon.type === 'percentage') {
-      return totalPrice * (1 - coupon.discount)
+    if (coupon.type === 'percentage') {
+      return price * (1 - coupon.value)
+    } else if (coupon.type === 'fixed') {
+      return coupon.value
     }
     return 0
   }
 
+  // 获取优惠券列表
+  const fetchCoupons = async () => {
+    loading.value = true
+    try {
+      const data = await couponApi.getCoupons()
+      coupons.value = data
+      return data
+    } catch (error) {
+      console.error('获取优惠券列表失败:', error)
+      coupons.value = []
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 领取优惠券
+  const claimCoupon = async (couponId) => {
+    await couponApi.claimCoupon(couponId)
+    await fetchMyCoupons()
+  }
+
+  // 获取我的优惠券
+  const fetchMyCoupons = async () => {
+    loading.value = true
+    try {
+      const data = await couponApi.getMyCoupons()
+      myCoupons.value = data
+      return data
+    } catch (error) {
+      console.error('获取我的优惠券失败:', error)
+      myCoupons.value = []
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 获取可用优惠券
+  const fetchAvailableCoupons = async () => {
+    loading.value = true
+    try {
+      const data = await couponApi.getAvailableCoupons()
+      myCoupons.value = data
+      return data
+    } catch (error) {
+      console.error('获取可用优惠券失败:', error)
+      myCoupons.value = []
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // 使用优惠券
+  const useCoupon = (couponId) => {
+    const coupon = myCoupons.value.find(c => c.id === couponId)
+    if (coupon) {
+      coupon.status = 'used'
+    }
+  }
+
   return {
-    availableCoupons,
+    coupons,
+    myCoupons,
     userCoupons,
+    availableCoupons,
     availableUserCoupons,
     usedUserCoupons,
-    expiredUserCoupons,
+    loading,
+    fetchCoupons,
     claimCoupon,
+    fetchMyCoupons,
+    fetchAvailableCoupons,
     useCoupon,
     calculateDiscount
   }

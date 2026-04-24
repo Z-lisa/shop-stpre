@@ -1,92 +1,102 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { authApi } from '@/api/auth'
 
 export const useUserStore = defineStore('user', () => {
-  // 从 localStorage 读取登录状态
-  const isLoggedIn = ref(JSON.parse(localStorage.getItem('isLoggedIn') || 'false'))
+  // 用户状态
+  const token = ref(localStorage.getItem('token') || '')
   const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || 'null'))
 
+  const isLoggedIn = computed(() => !!token.value)
   const isGuest = computed(() => !isLoggedIn.value)
   
-  // VIP会员相关计算属性
-  const isVIP = computed(() => userInfo.value?.isVIP || false)
-  const vipDiscount = computed(() => isVIP.value ? 0.85 : 1) // 会员85折
-  const totalSpent = computed(() => userInfo.value?.totalSpent || 0)
+  // VIP 会员相关计算属性
+  const isVIP = computed(() => userInfo.value?.is_vip || false)
+  const vipDiscount = computed(() => isVIP.value ? 0.85 : 1) // 会员 85 折
+  const totalSpent = computed(() => parseFloat(userInfo.value?.total_spent || 0))
   const canBecomeVIP = computed(() => totalSpent.value >= 500 && !isVIP.value)
 
   const saveToLocalStorage = () => {
-    localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn.value))
-    localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+    if (token.value) {
+      localStorage.setItem('token', token.value)
+    } else {
+      localStorage.removeItem('token')
+    }
+    
+    if (userInfo.value) {
+      localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+    } else {
+      localStorage.removeItem('userInfo')
+    }
   }
 
   // 登录
-  const login = (userData) => {
-    isLoggedIn.value = true
-    userInfo.value = {
-      id: 'user_' + Date.now(),
-      name: userData.name || '用户' + Math.floor(Math.random() * 10000),
-      avatar: userData.avatar || '',
-      phone: userData.phone || '',
-      totalSpent: 0,
-      isVIP: false,
-      vipSince: null,
-      ...userData
-    }
+  const login = async (username, password) => {
+    const data = await authApi.login({ username, password })
+    token.value = data.access_token
+    userInfo.value = data.user
     saveToLocalStorage()
     return userInfo.value
   }
 
-  // 游客登录（不保存订单）
-  const loginAsGuest = () => {
-    isLoggedIn.value = false
-    userInfo.value = {
-      id: 'guest_' + Date.now(),
-      name: '游客',
-      isGuest: true
-    }
+  // 注册
+  const register = async (userData) => {
+    const data = await authApi.register(userData)
+    token.value = data.access_token
+    userInfo.value = data.user
     saveToLocalStorage()
+    return userInfo.value
+  }
+
+  // 获取用户信息
+  const fetchUserInfo = async () => {
+    if (!token.value) return null
+    
+    try {
+      const data = await authApi.getCurrentUser()
+      userInfo.value = data
+      saveToLocalStorage()
+      return data
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+      return null
+    }
+  }
+
+  // 更新用户信息
+  const updateProfile = async (data) => {
+    const updated = await authApi.updateProfile(data)
+    userInfo.value = updated
+    saveToLocalStorage()
+    return updated
+  }
+
+  // 修改密码
+  const changePassword = async (oldPassword, newPassword) => {
+    await authApi.changePassword(oldPassword, newPassword)
   }
 
   // 退出登录
-  const logout = () => {
-    isLoggedIn.value = false
+  const loginAsGuest = () => {
+    token.value = ''
     userInfo.value = null
-    localStorage.removeItem('isLoggedIn')
-    localStorage.removeItem('userInfo')
-    // 清除游客订单数据
-    localStorage.removeItem('orders')
+    saveToLocalStorage()
   }
 
-  // 更新消费金额
-  const updateSpending = (amount) => {
-    if (isLoggedIn.value && userInfo.value) {
-      userInfo.value.totalSpent = (userInfo.value.totalSpent || 0) + amount
-      
-      // 检查是否满足VIP条件
-      if (userInfo.value.totalSpent >= 500 && !userInfo.value.isVIP) {
-        userInfo.value.isVIP = true
-        userInfo.value.vipSince = new Date().toISOString()
-      }
-      
-      saveToLocalStorage()
+  const logout = () => {
+    token.value = ''
+    userInfo.value = null
+    saveToLocalStorage()
+  }
+
+  const init = async () => {
+    if (token.value && !userInfo.value) {
+      await fetchUserInfo()
     }
-  }
-
-  // 手动升级为VIP（用于测试）
-  const upgradeToVIP = () => {
-    if (isLoggedIn.value && userInfo.value) {
-      userInfo.value.isVIP = true
-      userInfo.value.vipSince = new Date().toISOString()
-      saveToLocalStorage()
-    }
-  }
-
-  // 初始化
-  if (!isLoggedIn.value && !userInfo.value) {
-    loginAsGuest()
   }
 
   return {
+    token,
     isLoggedIn,
     userInfo,
     isGuest,
@@ -95,9 +105,12 @@ export const useUserStore = defineStore('user', () => {
     totalSpent,
     canBecomeVIP,
     login,
+    register,
+    fetchUserInfo,
+    updateProfile,
+    changePassword,
     loginAsGuest,
     logout,
-    updateSpending,
-    upgradeToVIP
+    init
   }
 })
