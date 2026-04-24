@@ -54,12 +54,12 @@ def init_database():
             print("[OK] 默认地址创建成功")
         
         categories = [
-            Category(id=1, name='文学小说', parent_id=None, sort_order=1, is_active=True),
-            Category(id=2, name='历史传记', parent_id=None, sort_order=2, is_active=True),
-            Category(id=3, name='科技图书', parent_id=None, sort_order=3, is_active=True),
-            Category(id=4, name='生活休闲', parent_id=None, sort_order=4, is_active=True),
-            Category(id=5, name='服装', parent_id=None, sort_order=5, is_active=True),
-            Category(id=6, name='鞋子', parent_id=None, sort_order=6, is_active=True),
+            Category(id=1, name='女装', parent_id=None, sort_order=1, is_active=True),
+            Category(id=2, name='男装', parent_id=None, sort_order=2, is_active=True),
+            Category(id=3, name='配饰首饰', parent_id=None, sort_order=3, is_active=True),
+            Category(id=4, name='箱包', parent_id=None, sort_order=4, is_active=True),
+            Category(id=5, name='运动户外', parent_id=None, sort_order=5, is_active=True),
+            Category(id=6, name='鞋靴', parent_id=None, sort_order=6, is_active=True),
         ]
         db.add_all(categories)
         db.commit()
@@ -67,92 +67,105 @@ def init_database():
         
         # 插入商品数据
         products = [
-            # 文学小说
-            Product(id=1, name='活着', author='余华', publisher='作家出版社', 
-                   price=Decimal('29.80'), original_price=Decimal('35.00'), stock=100, category_id=1,
-                   description='活着是中国当代作家余华创作的长篇虚构类小说，首次发表于《收获》1992 年第 6 期。',
-                   cover_image='book_1.jpg', size_type='none', rating=4.5, review_count=10, sales_count=50),
+            # 女装
+            Product(id=1, name='法式碎花连衣裙', author='ZARA', publisher='ZARA',
+                   price=Decimal('299.00'), original_price=Decimal('399.00'), stock=100, category_id=1,
+                   description='浪漫法式碎花连衣裙，优雅显瘦，适合春夏穿着',
+                   cover_image='https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=200&h=280&fit=crop', size_type='clothing',
+                   sizes=["S","M","L","XL"],
+                   rating=4.5, review_count=10, sales_count=50),
             
-            Product(id=2, name='百年孤独', author='加西亚·马尔克斯', publisher='南海出版公司',
-                   price=Decimal('59.00'), original_price=Decimal('69.00'), stock=80, category_id=1,
-                   description='《百年孤独》是哥伦比亚作家加西亚·马尔克斯的代表作，也是拉丁美洲魔幻现实主义文学的代表作。',
-                   cover_image='book_2.jpg', size_type='none', rating=4.8, review_count=15, sales_count=80),
+            Product(id=2, name='针织开衫外套', author='优衣库', publisher='优衣库',
+                   price=Decimal('199.00'), original_price=Decimal('249.00'), stock=80, category_id=1,
+                   description='柔软舒适针织开衫，百搭基础款，多色可选',
+                   cover_image='https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=200&h=280&fit=crop', size_type='clothing',
+                   sizes=["S","M","L","XL"],
+                   rating=4.8, review_count=15, sales_count=80),
             
-            Product(id=3, name='追风筝的人', author='卡勒德·胡赛尼', publisher='上海人民出版社',
-                   price=Decimal('45.00'), original_price=Decimal('52.00'), stock=120, category_id=1,
-                   description='《追风筝的人》是美籍阿富汗裔作家卡勒德·胡赛尼的第一部小说。',
-                   cover_image='book_3.jpg', size_type='none', rating=4.6, review_count=20, sales_count=60),
+            Product(id=3, name='高腰阔腿裤', author='韩都衣舍', publisher='韩都衣舍',
+                   price=Decimal('159.00'), original_price=Decimal('229.00'), stock=120, category_id=1,
+                   description='高腰设计拉长腿部比例，宽松版型舒适显瘦',
+                   cover_image='https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=200&h=280&fit=crop', size_type='clothing',
+                   sizes=["S","M","L","XL","XXL"],
+                   rating=4.6, review_count=20, sales_count=60),
             
-            # 历史传记
-            Product(id=4, name='明朝那些事儿', author='当年明月', publisher='浙江人民出版社',
-                   price=Decimal('39.80'), original_price=Decimal('45.00'), stock=90, category_id=2,
-                   description='《明朝那些事儿》主要讲述的是从 1344 年到 1644 年这三百年间关于明朝的一些故事。',
-                   cover_image='book_4.jpg', size_type='none', rating=4.7, review_count=12, sales_count=70),
+            # 男装
+            Product(id=4, name='商务休闲衬衫', author='海澜之家', publisher='海澜之家',
+                   price=Decimal('179.00'), original_price=Decimal('249.00'), stock=90, category_id=2,
+                   description='免烫商务衬衫，简约大气，适合职场穿着',
+                   cover_image='https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=200&h=280&fit=crop', size_type='clothing',
+                   sizes=["M","L","XL","XXL","XXXL"],
+                   rating=4.7, review_count=12, sales_count=70),
             
-            Product(id=5, name='史记', author='司马迁', publisher='中华书局',
-                   price=Decimal('68.00'), original_price=Decimal('78.00'), stock=60, category_id=2,
-                   description='《史记》是西汉史学家司马迁撰写的纪传体史书，是中国历史上第一部纪传体通史。',
-                   cover_image='book_5.jpg', size_type='none', rating=4.9, review_count=8, sales_count=40),
+            Product(id=5, name='工装夹克外套', author='太平鸟', publisher='太平鸟',
+                   price=Decimal('399.00'), original_price=Decimal('599.00'), stock=60, category_id=2,
+                   description='潮流工装风夹克，挺括有型，帅气百搭',
+                   cover_image='https://images.unsplash.com/photo-1551028919-ac76c9028d1e?w=200&h=280&fit=crop', size_type='clothing',
+                   sizes=["M","L","XL","XXL"],
+                   rating=4.9, review_count=8, sales_count=40),
             
-            # 科技图书
-            Product(id=6, name='Python 编程：从入门到实践', author='Eric Matthes', publisher='人民邮电出版社',
-                   price=Decimal('79.00'), original_price=Decimal('89.00'), stock=150, category_id=3,
-                   description='本书是一本针对所有层次的 Python 读者写的教程式书籍。',
-                   cover_image='book_6.jpg', size_type='none', rating=4.8, review_count=25, sales_count=100),
+            # 配饰首饰
+            Product(id=6, name='925银项链', author='潘多拉', publisher='潘多拉',
+                   price=Decimal('399.00'), original_price=Decimal('599.00'), stock=150, category_id=3,
+                   description='精致925银项链，简约优雅，送礼自用皆宜',
+                   cover_image='https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=200&h=280&fit=crop', size_type='none',
+                   rating=4.8, review_count=25, sales_count=100),
             
-            Product(id=7, name='深入理解计算机系统', author='Randal E.Bryant', publisher='机械工业出版社',
-                   price=Decimal('139.00'), original_price=Decimal('159.00'), stock=50, category_id=3,
-                   description='本书从程序员的视角详细阐述计算机系统的本质概念。',
-                   cover_image='book_7.jpg', size_type='none', rating=4.9, review_count=5, sales_count=30),
+            Product(id=7, name='时尚耳环套装', author='周大福', publisher='周大福',
+                   price=Decimal('199.00'), original_price=Decimal('299.00'), stock=50, category_id=3,
+                   description='多款式耳环组合，日常百搭，闪耀动人',
+                   cover_image='https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=200&h=280&fit=crop', size_type='none',
+                   rating=4.9, review_count=5, sales_count=30),
             
-            # 生活休闲
-            Product(id=8, name='断舍离', author='山下英子', publisher='广西科学技术出版社',
-                   price=Decimal('32.00'), original_price=Decimal('38.00'), stock=200, category_id=4,
-                   description='断舍离是日本作家山下英子创作的家庭生活类著作。',
-                   cover_image='book_8.jpg', size_type='none', rating=4.3, review_count=18, sales_count=90),
+            # 箱包
+            Product(id=8, name='简约单肩包', author='小CK', publisher='小CK',
+                   price=Decimal('269.00'), original_price=Decimal('399.00'), stock=200, category_id=4,
+                   description='时尚简约单肩包，容量大，通勤必备',
+                   cover_image='https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=200&h=280&fit=crop', size_type='none',
+                   rating=4.3, review_count=18, sales_count=90),
             
-            # 服装
-            Product(id=9, name='春季新款 T 恤 白色', author='优衣库', publisher='优衣库',
+            # 运动户外
+            Product(id=9, name='速干运动T恤', author='迪卡侬', publisher='迪卡侬',
                    price=Decimal('99.00'), original_price=Decimal('149.00'), stock=500, category_id=5,
-                   description='春季新款纯棉 T 恤，舒适透气',
-                   cover_image='shirt_white.jpg', size_type='clothing',
+                   description='专业速干面料，透气排汗，运动首选',
+                   cover_image='https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200&h=280&fit=crop', size_type='clothing',
                    sizes=["S","M","L","XL","XXL"],
                    rating=4.5, review_count=30, sales_count=200),
             
-            Product(id=10, name='春季新款 T 恤 黑色', author='优衣库', publisher='优衣库',
-                   price=Decimal('99.00'), original_price=Decimal('149.00'), stock=500, category_id=5,
-                   description='春季新款纯棉 T 恤，舒适透气',
-                   cover_image='shirt_black.jpg', size_type='clothing',
-                   sizes=["S","M","L","XL","XXL"],
+            Product(id=10, name='运动瑜伽裤', author='Lululemon', publisher='Lululemon',
+                   price=Decimal('299.00'), original_price=Decimal('450.00'), stock=500, category_id=5,
+                   description='高弹亲肤瑜伽裤，修身塑形，运动舒适',
+                   cover_image='https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=200&h=280&fit=crop', size_type='clothing',
+                   sizes=["S","M","L","XL"],
                    rating=4.5, review_count=25, sales_count=180),
             
-            Product(id=11, name='休闲牛仔裤 蓝色', author='优衣库', publisher='优衣库',
-                   price=Decimal('299.00'), original_price=Decimal('399.00'), stock=300, category_id=5,
-                   description='经典休闲牛仔裤，修身版型',
-                   cover_image='jeans_blue.jpg', size_type='clothing',
-                   sizes=["28","29","30","31","32","33","34"],
+            Product(id=11, name='户外防晒衣', author='北面', publisher='北面',
+                   price=Decimal('399.00'), original_price=Decimal('599.00'), stock=300, category_id=5,
+                   description='轻薄防晒皮肤衣，UPF50+，户外活动必备',
+                   cover_image='https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=200&h=280&fit=crop', size_type='clothing',
+                   sizes=["M","L","XL","XXL"],
                    rating=4.4, review_count=20, sales_count=120),
             
-            # 鞋子
-            Product(id=12, name='运动鞋 白色', author='耐克', publisher='耐克',
+            # 鞋靴
+            Product(id=12, name='经典小白鞋', author='耐克', publisher='耐克',
                    price=Decimal('599.00'), original_price=Decimal('799.00'), stock=200, category_id=6,
-                   description='经典款运动鞋，舒适耐穿',
-                   cover_image='shoes_white.jpg', size_type='shoes',
-                   sizes=["38","39","40","41","42","43","44"],
+                   description='百搭经典小白鞋，舒适透气，日常必备',
+                   cover_image='https://images.unsplash.com/photo-1549298916-b41d501d3772?w=200&h=280&fit=crop', size_type='shoes',
+                   sizes=["36","37","38","39","40","41","42","43","44"],
                    rating=4.7, review_count=40, sales_count=150),
             
-            Product(id=13, name='运动鞋 黑色', author='耐克', publisher='耐克',
-                   price=Decimal('599.00'), original_price=Decimal('799.00'), stock=200, category_id=6,
-                   description='经典款运动鞋，舒适耐穿',
-                   cover_image='shoes_black.jpg', size_type='shoes',
-                   sizes=["38","39","40","41","42","43","44"],
+            Product(id=13, name='复古帆布鞋', author='匡威', publisher='匡威',
+                   price=Decimal('399.00'), original_price=Decimal('499.00'), stock=200, category_id=6,
+                   description='经典复古帆布鞋，潮流百搭，年轻首选',
+                   cover_image='https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=200&h=280&fit=crop', size_type='shoes',
+                   sizes=["35","36","37","38","39","40","41","42","43"],
                    rating=4.7, review_count=35, sales_count=140),
             
-            Product(id=14, name='休闲板鞋', author='阿迪达斯', publisher='阿迪达斯',
-                   price=Decimal('499.00'), original_price=Decimal('699.00'), stock=150, category_id=6,
-                   description='时尚休闲板鞋，百搭款式',
-                   cover_image='shoes_casual.jpg', size_type='shoes',
-                   sizes=["38","39","40","41","42","43"],
+            Product(id=14, name='马丁靴', author='Dr.Martens', publisher='Dr.Martens',
+                   price=Decimal('899.00'), original_price=Decimal('1299.00'), stock=150, category_id=6,
+                   description='经典英伦马丁靴，硬朗有型，耐穿百搭',
+                   cover_image='https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=200&h=280&fit=crop', size_type='shoes',
+                   sizes=["36","37","38","39","40","41","42","43"],
                    rating=4.6, review_count=28, sales_count=110),
         ]
         db.add_all(products)
